@@ -59,7 +59,7 @@ def load_pfam(path, alph):
             family = name.split(b';')[-2]
             group.append(family)
     group = np.array(group)
-    sequences = np.array(sequences)
+    sequences = np.array(sequences, dtype='object')
     return group, sequences
 
 

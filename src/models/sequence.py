@@ -104,7 +104,7 @@ class BiLM(nn.Module):
                     h_fwd = self.dropout(h_fwd)
                     h_rvs,_ = rrnn(h_rvs)
                     h_rvs = self.dropout(h_rvs)
-                    hidden.append((h_fwd, h_rvs.index_select(1, dx)))
+                    hidden.append((h_fwd, h_rvs.index_select(1, idx)))
 
         return hidden
 

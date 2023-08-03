@@ -21,6 +21,20 @@ from src.utils import MultinomialResample
 import src.models.embedding
 import src.models.comparison
 
+# https://github.com/pytorch/pytorch/issues/2576#issuecomment-831780307
+class CustomWeightedRandomSampler(torch.utils.data.sampler.WeightedRandomSampler):
+    """WeightedRandomSampler except allows for more than 2^24 samples to be sampled"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __iter__(self):
+        rand_tensor = np.random.choice(range(0, len(self.weights)),
+                                       size=self.num_samples,
+                                       p=self.weights.numpy() / torch.sum(self.weights).numpy(),
+                                       replace=self.replacement)
+        rand_tensor = torch.from_numpy(rand_tensor)
+        return iter(rand_tensor.tolist())
+
 
 def main():
     import argparse
@@ -55,7 +69,7 @@ def main():
 
     parser.add_argument('-o', '--output', help='output file path (default: stdout)')
     parser.add_argument('--save-prefix', help='path prefix for saving models')
-    parser.add_argument('-d', '--device', type=int, default=-2, help='compute device to use')
+    parser.add_argument('-d', '--device', type=int, default=-1, help='compute device to use')
 
     args = parser.parse_args()
 
@@ -150,7 +164,7 @@ def main():
     weights = counts**tau/counts
     weights = weights[similarity].ravel()
     #weights = np.ones(len(dataset_train))
-    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, epoch_size)
+    sampler = CustomWeightedRandomSampler(weights, epoch_size)
 
     # two training dataset iterators for sampling pairs of sequences for training
     train_iterator = torch.utils.data.DataLoader(dataset_train
